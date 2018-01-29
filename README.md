@@ -18,7 +18,9 @@ Either add this line to your .bash_profile or export it temporarily in the termi
  ```
 
 # Usage 
+```
 map geojson_file.geojson
+```
 
 # Other useful information 
 If you have a "COLORKEY" field in your properties as well as a valid color that works with mapbox gl-js styles (some plain text ('red'), rgba(), hex colorkeys etc. it will automatically style your feature based on that field. 
