@@ -5,14 +5,17 @@ import subprocess
 import sys
 import json
 
-def make_html(geojsonfile,firstcoord):
+
+
+def make_html(geojsonfile,firstcoord,boolval):
     mapbox_access_token = os.environ['MAPBOX_ACCESS_TOKEN']
-    eh = '''
+    if boolval == False:
+      eh = '''
 <html><head>
   <meta charset="utf-8">
   <title>mbview - vector</title>
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-  <script src="https://rawgit.com/murphy214/99ce4a53429faff47981267e5fd26aae/raw/616cec8830390332c3e3ad6d17cd956cc7c02428/mapbox-gl.js"></script>
+  <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v0.42.0/mapbox-gl.js"></script>
   <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v0.42.0/mapbox-gl.css" rel="stylesheet">
   <link href="https://www.mapbox.com/base/latest/base.css" rel="stylesheet">
 
@@ -355,6 +358,359 @@ map.on('mousemove', function (e) {
 
 </body></html>
 '''.replace('xxxxx',geojsonfile)
+    else:
+      eh = '''
+<html><head>
+  <meta charset="utf-8">
+  <title>mbview - vector</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v0.42.0/mapbox-gl.js"></script>
+  <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v0.42.0/mapbox-gl.css" rel="stylesheet">
+  <link href="https://www.mapbox.com/base/latest/base.css" rel="stylesheet">
+
+  <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+
+  <style>
+    body { margin:0; padding:0; }
+    #map { position:absolute; top:0; bottom:0; width:100%; }
+    .mbview_popup {
+      color: #333;
+      display: table;
+      font-family: "Open Sans", sans-serif;
+      font-size: 10px;
+    }
+
+    .mbview_feature:not(:last-child) {
+      border-bottom: 1px solid #ccc;
+    }
+
+    .mbview_layer:before {
+      content: '#';
+    }
+
+    .mbview_layer {
+      display: block;
+      font-weight: bold;
+    }
+
+    .mbview_property {
+      display: table-row;
+    }
+
+    .mbview_property-value {
+      display: table-cell;
+
+    }
+
+    .mbview_property-name {
+      display: table-cell;
+      padding-right: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<style>
+#menu {
+  position: absolute;
+  top:10px;
+  right:10px;
+  z-index: 1;
+  color: white;
+  cursor: pointer;
+}
+#menu-container {
+  position: absolute;
+  display: none;
+  top: 50px;
+  right: 10px;
+  z-index: 1;
+  background-color: white;
+  padding: 20px;
+}
+</style>
+
+<div id="menu"><span class="icon menu big"></span></div>
+
+<div id="menu-container">
+  <h4>Filter</h4>
+  <div id="menu-filter" onchange="menuFilter()" class="rounded-toggle short inline">
+    <input id="filter-all" type="radio" name="rtoggle" value="all" checked="checked">
+    <label for="filter-all">all</label>
+    <input id="filter-polygons" type="radio" name="rtoggle" value="polygons">
+    <label for="filter-polygons">polygons</label>
+    <input id="filter-lines" type="radio" name="rtoggle" value="lines">
+    <label for="filter-lines">lines</label>
+    <input id="filter-pts" type="radio" name="rtoggle" value="pts">
+    <label for="filter-pts">points</label>
+  </div>
+  <h4>Popup</h4>
+  <div id="menu-popup" onchange="menuPopup()" class="rounded-toggle short inline">
+    <input id="show-popup" type="checkbox" name="ptoggle" value="all" '="">
+    <label for="show-popup">show attributes</label>
+  </div>
+</div>
+
+<script>
+
+// Show and hide hamburger menu as needed
+var menuBtn = document.querySelector("#menu");
+var menu = document.querySelector("#menu-container");
+menuBtn.addEventListener('click', function() {
+  popup.remove();
+  if (menuBtn.className.indexOf('active') > -1) {
+    //Hide Menu
+    menuBtn.className = '';
+    menu.style.display = 'none';
+  } else {
+    //Show Menu
+    menuBtn.className = 'active';
+    menu.style.display = 'block';
+
+  }
+}, false);
+
+//Menu-Filter Module
+function menuFilter() {
+  if (document.querySelector("#filter-all").checked) {
+    paint(layers.pts, 'visible');
+    paint(layers.lines, 'visible');
+    paint(layers.polygons, 'visible');
+  } else if (document.querySelector("#filter-pts").checked) {
+    paint(layers.pts, 'visible');
+    paint(layers.lines, 'none');
+    paint(layers.polygons, 'none');
+  } else if (document.querySelector("#filter-lines").checked) {
+    paint(layers.pts, 'none');
+    paint(layers.lines, 'visible');
+    paint(layers.polygons, 'none');
+  } else if (document.querySelector("#filter-polygons").checked) {
+    paint(layers.pts, 'none');
+    paint(layers.lines, 'none');
+    paint(layers.polygons, 'visible');
+  }
+
+  function paint(layers, val) {
+    layers.forEach(function(layer) {
+      map.setLayoutProperty(layer, 'visibility', val)
+    });
+  }
+}
+
+function menuPopup() {
+  wantPopup = document.querySelector("#show-popup").checked;
+}
+
+</script>
+
+
+<div id="map" class="mapboxgl-map"><div class="mapboxgl-canvas-container mapboxgl-interactive"><canvas class="mapboxgl-canvas" tabindex="0" aria-label="Map" width="1600" height="1250" style="position: absolute; width: 800px; height: 625px;"></canvas></div><div class="mapboxgl-control-container"><div class="mapboxgl-ctrl-top-left"></div><div class="mapboxgl-ctrl-top-right"></div><div class="mapboxgl-ctrl-bottom-left"><div class="mapboxgl-ctrl"><a class="mapboxgl-ctrl-logo" target="_blank" href="https://www.mapbox.com/" aria-label="Mapbox logo"></a></div></div><div class="mapboxgl-ctrl-bottom-right"><div class="mapboxgl-ctrl mapboxgl-ctrl-attrib"><a href="https://www.mapbox.com/about/maps/" target="_blank"> Mapbox</a> <a href="http://www.openstreetmap.org/about/" target="_blank"> OpenStreetMap</a> <a class="mapbox-improve-map" href="https://www.mapbox.com/map-feedback/#/0/26.038248889032054/13" target="_blank">Improve this map</a></div></div></div></div>
+
+<script>var center = yyyyy;
+center = [center[0], center[1]];
+
+mapboxgl.accessToken = 'zzzzz';
+var map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/dark-v9',
+  center: center,
+  zoom: 12,
+  hash: true,
+  maxZoom: 30
+});
+
+var layers = {
+  pts: [],
+  lines: [],
+  polygons: []
+}
+
+var lightColors = [
+  'FC49A3', // pink
+  'CC66FF', // purple-ish
+  '66CCFF', // sky blue
+  '66FFCC', // teal
+  '00FF00', // lime green
+  'FFCC66', // light orange
+  'FF6666', // salmon
+  'FF0000', // red
+  'FF8000', // orange
+  'FFFF66', // yellow
+  '00FFFF'  // turquoise
+];
+
+function randomColor(colors) {
+  var randomNumber = parseInt(Math.random() * colors.length);
+  return colors[randomNumber];
+}
+
+map.on('load', function () {
+  
+    $.getJSON('xxxxx',function(data1) { addDataToMap0(data1); });
+     function addDataToMap0(data1) {
+
+    map.addSource('xxxxx', {
+      type:'geojson',
+      maxzoom:14,
+      data:data1,
+    });
+
+    
+
+  var layerColor = '#' + randomColor(lightColors);
+
+  map.addLayer({
+    'id': 'county-polygons',
+    'type': 'fill',
+    'source': 'xxxxx',
+    'filter': ["==", "$type", "Polygon"],
+    'layout': {},
+    'paint': {
+      'fill-opacity': 0.1,
+      'fill-color': {'type': 'identity',
+                'property': 'COLORKEY'}
+    }
+  });
+
+  map.addLayer({
+    'id': 'county-polygons-outline',
+    'type': 'line',
+    'source': 'xxxxx',
+    'filter': ["==", "$type", "Polygon"],
+    'layout': {
+      'line-join': 'round',
+      'line-cap': 'round'
+    },
+    'paint': {
+      'line-color': {'type': 'identity',
+                'property': 'COLORKEY'},
+      'line-width': 1,
+      'line-opacity': 0.75
+    }
+  });
+
+  map.addLayer({
+    'id': 'county-lines',
+    'type': 'line',
+    'source': 'xxxxx',
+    'filter': ["==", "$type", "LineString"],
+    'layout': {
+      'line-join': 'round',
+      'line-cap': 'round'
+    },
+    'paint': {
+      'line-color': {'type': 'identity',
+                'property': 'COLORKEY'},
+      'line-width': 1,
+      'line-opacity': 0.75
+    }
+  });
+
+  map.addLayer({
+    'id': 'county-pts',
+    'type': 'circle',
+    'source': 'xxxxx',
+    'filter': ["==", "$type", "Point"],
+    'paint': {
+      'circle-color': {'type': 'identity',
+                'property': 'COLORKEY'},
+      'circle-radius': 2.5,
+      'circle-opacity': 0.75
+    }
+  });
+
+  layers.polygons.push('county-polygons');
+  layers.polygons.push('county-polygons-outline');
+  layers.lines.push('county-lines');
+  layers.pts.push('county-pts');
+
+
+}
+
+  
+});
+
+
+function displayValue(value) {
+  if (typeof value === 'undefined' || value === null) return value;
+  if (typeof value === 'object' ||
+      typeof value === 'number' ||
+      typeof value === 'string') return value.toString();
+  return value;
+}
+
+function renderProperty(propertyName, property) {
+  return '<div class="mbview_property">' +
+    '<div class="mbview_property-name">' + propertyName + '</div>' +
+    '<div class="mbview_property-value">' + displayValue(property) + '</div>' +
+    '</div>';
+}
+
+function renderLayer(layerId) {
+  return '<div class="mbview_layer">' + layerId + '</div>';
+}
+
+function renderProperties(feature) {
+  var sourceProperty = renderLayer(feature.layer['source-layer'] || feature.layer.source);
+  var typeProperty = renderProperty('$type', feature.geometry.type);
+  var properties = Object.keys(feature.properties).map(function (propertyName) {
+    return renderProperty(propertyName, feature.properties[propertyName]);
+  });
+  return [sourceProperty, typeProperty].concat(properties).join('');
+}
+
+function renderFeatures(features) {
+  return features.map(function (ft) {
+    return '<div class="mbview_feature">' + renderProperties(ft) + '</div>';
+  }).join('');
+}
+
+function renderPopup(features) {
+  return '<div class="mbview_popup">' + renderFeatures(features) + '</div>';
+}
+
+var popup = new mapboxgl.Popup({
+  closeButton: false,
+  closeOnClick: false
+});
+
+var wantPopup = false;
+
+console.log('layers', layers);
+map.on('mousemove', function (e) {
+  // set a bbox around the pointer
+  var selectThreshold = 3;
+  var queryBox = [
+    [
+      e.point.x - selectThreshold,
+      e.point.y + selectThreshold
+    ], // bottom left (SW)
+    [
+      e.point.x + selectThreshold,
+      e.point.y - selectThreshold
+    ] // top right (NE)
+  ];
+
+  var features = map.queryRenderedFeatures(queryBox, {
+    layers: layers.polygons.concat(layers.lines.concat(layers.pts))
+  }) || [];
+  map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
+
+  if (!features.length || !wantPopup) {
+    popup.remove();
+  } else {
+    popup.setLngLat(e.lngLat)
+      .setHTML(renderPopup(features))
+      .addTo(map);
+  }
+});
+
+</script>
+
+
+
+</body></html>
+'''.replace('xxxxx',geojsonfile)
     eh = eh.replace('yyyyy',str(firstcoord))
     eh = eh.replace('zzzzz',mapbox_access_token)
     return eh
@@ -394,6 +750,11 @@ def get_coord(filename):
 
 def get_coords(filename):
     feat = get_coord(filename)
+    feat_loaded = json.loads(feat)
+    boolval = True 
+    if feat_loaded['properties'].get('COLORKEY','') == '':
+      boolval = False
+
     coords = str.split(feat[1:-1],'"geometry":')[1]
     coords = str.split(coords,']},')[0] + ']}'
     coords = json.loads(coords)
@@ -417,7 +778,7 @@ def get_coords(filename):
     
     #print typegeom,coords
     #print coords
-    return firstcoord
+    return firstcoord,boolval
 
 
 def write_open_html(html):
@@ -427,8 +788,8 @@ def write_open_html(html):
 
 
 def map_action(geojsonfile):
-    firstcoord = get_coords(geojsonfile)
-    html = make_html(geojsonfile,firstcoord)
+    firstcoord,boolval = get_coords(geojsonfile)
+    html = make_html(geojsonfile,firstcoord,boolval)
     write_open_html(html)
 
 parser = argparse.ArgumentParser()
