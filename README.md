@@ -1,6 +1,7 @@
 # quickmap
 Fast command line views of geojson files
 
+![](https://user-images.githubusercontent.com/10904982/35528864-3dcf5ee4-04fd-11e8-9d3d-46aa81aab705.gif)
 
 ## How to use 
 Super simple views of geojson files using mapbox-gl-js
