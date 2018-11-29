@@ -1,4 +1,4 @@
-#!/Users/charlesbmurphy/anaconda/bin/python
+#!/home/bennett/anaconda2/bin/python
 import argparse
 import os
 import subprocess
@@ -790,12 +790,44 @@ def get_coords(filename):
     #print typegeom,coords
     #print coords
     return firstcoord,boolval
+import threading
+
+def start_server():
+  a = '''
+from flask import request
+import sys
+import os
+from flask import Flask
+app = Flask(__name__)
+dir = os.environ['CURRENT']
+
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
 
 
+@app.route('/<path:mypath>', methods=['GET'])
+def route(mypath):
+    if mypath.endswith('.geojson'):
+        shutdown_server()
+        return open(mypath,'rb').read()
+
+    if mypath.endswith('index.html'):
+        return open(mypath,'rb').read()
+    return ''
+  '''
+  dir = os.getcwd()
+  open(dir+'/exec.py','wb').write(a)
+  os.system('FLASK_APP=exec.py CURRENT=%s flask run' % dir)
 def write_open_html(html):
+    t1 = threading.Thread(target=start_server, args=[])
+
+    t1.start()
     with open('index.html','wb') as f:
         f.write(html)
-    os.system('open -a Safari index.html')
+    os.system('google-chrome http://localhost:5000/index.html')
 
 
 def map_action(geojsonfile):
